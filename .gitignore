@@ -1,0 +1,10 @@
+# VS Files
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+x64/
+.vs/
+
+*.wav
+videos

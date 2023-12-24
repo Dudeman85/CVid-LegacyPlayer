@@ -1,9 +1,9 @@
 # Console Video Player
 
-This simple program can play videos on the Windows CMD or Powershell. 
+This simple program can play videos on the Windows CMD or Powershell. In case VLC is too complex for some.
 
 ## Compilation
-Everything is contained in ConsoleVideoPlayer.cpp. Simply compile with MSVC.
+Everything is contained in ConsoleVideoPlayer.cpp. Simply compile with **MSVC**.
 
 To set up the Python environment for running the converter script use:
 ```
@@ -11,10 +11,10 @@ pip install requirements.txt
 ```
 
 ## Usage
-The program can only play .wav audio and a custom video format. Therefore the included python script VideoConverter.py should be used to generate those files from an mp4 or other video format. 
+The program can only play .wav audio and a custom video format. Therefore the included python script VideoConverter.py should be used to generate those files from an mp4 or other video format.
 
 ### Convert Video
-To convert a video you need a python environment set up:
+To convert a video, you first need to set up the environment, then simply run:
 ```
 python VideoConverter.py video.mp4 -h 100
 ```
@@ -34,3 +34,8 @@ cvid -v path/to/video
 The possible command line arguments are:
 - -v or --video: The path of the video and audio to play, without a file extention.
 - -c or --charset: The custom character set to use for rendering. You need to provide three ASCII characters which will represent an upper, a lower, and both pixels. The default is ▀▄█
+
+## TODO
+- [ ] Add ability to load any type of video without converting, possibly through ffmpeg.
+- [ ] Add sound playback for that loaded video, possibly through miniaudio.
+- [ ] Add 16 colors

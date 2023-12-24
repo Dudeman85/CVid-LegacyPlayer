@@ -8,20 +8,29 @@
 #include <thread>
 
 using namespace std;
+using byte = unsigned char;
 
-//Argparser functions
-char* GetOption(char** argv, int argc, const std::string& option)
+//Convenient Argparser functions
+char* GetOption(char** argv, int argc, const string& option, const string& altName = "")
 {
-	char** itr = std::find(argv, argv + argc, option);
+	//Find the option 
+	char** itr = std::find(argv, argv + argc, option); 
+	if (itr == argv + argc)
+		itr = std::find(argv, argv + argc, altName);
+
+	//Make sure the arg after the option is valid
 	if (itr != argv + argc && ++itr != argv + argc)
-	{
 		return *itr;
-	}
+
 	return 0;
 }
-bool OptionExists(char** argv, int argc, const std::string& option)
+bool OptionExists(char** argv, int argc, const string& option, const string& altName = "")
 {
-	return std::find(argv, argv + argc, option) != argv + argc;
+	//Check both normal and alt names
+	bool exists = std::find(argv, argv + argc, option) != argv + argc;
+	if (altName != "")
+		exists |= std::find(argv, argv + argc, altName) != argv + argc;
+	return exists;
 }
 
 struct VideoProperties
@@ -29,7 +38,7 @@ struct VideoProperties
 	unsigned short width = 0;
 	unsigned short height = 0;
 	unsigned short frames = 0;
-	unsigned char fps = 0;
+	byte fps = 0;
 };
 
 //Load an image or video from a binary file
@@ -75,12 +84,14 @@ int main(int argc, char* argv[])
 {
 	//Get the video name
 	string videoName;
-	if (OptionExists(argv, argc, "-v"))
+	if (OptionExists(argv, argc, "-v", "--video"))
 	{
-		videoName = GetOption(argv, argc, "-v");
+		//From command line args
+		videoName = GetOption(argv, argc, "-v", "--video");
 	}
 	else
 	{
+		//Ask directly
 		cout << "Enter the name of the video to play: ";
 		cin >> videoName;
 	}
@@ -93,13 +104,12 @@ int main(int argc, char* argv[])
 	characters[2] = (char)220; //Bottom
 	characters[3] = (char)219; //Both
 	//Load from command line if option was given
-	if (OptionExists(argv, argc, "-c"))
+	if (OptionExists(argv, argc, "-c", "--charset"))
 	{
 		//Load from command line args
-		char* charset = GetOption(argv, argc, "-c");
+		char* charset =GetOption(argv, argc, "-c", "--charset");
 		if (strlen(charset) >= 3)
 		{
-			//Load from command line
 			characters[1] = charset[0]; //Top
 			characters[2] = charset[1]; //Bottom
 			characters[3] = charset[2]; //Both
@@ -151,21 +161,22 @@ int main(int argc, char* argv[])
 
 	//Play the audio if provided
 	PlaySoundA((LPCSTR)(videoName + ".wav").c_str(), NULL, SND_FILENAME | SND_ASYNC);
-
-	//Get the ms to wait between frames
+	
+	//Calculate the time to wait between frames
 	auto waitTime = chrono::microseconds((int)((1.f / properties.fps) * 1000000));
 	unsigned int frameOffset = 0;
-	//For each frame
-	for (size_t i = 0; i < properties.frames; i++)
+	//For each frame, currently max of 65535
+	for (unsigned short i = 0; i < properties.frames; i++)
 	{
 		auto frameStart = chrono::high_resolution_clock::now();
 
 		//Set the cursor to 0, 0
 		SetConsoleCursorPosition(console, COORD{ (short)0, (short)0 });
 
-		//Draw the image data
+		//Draw the frame data
 		//Keep track of important bit data
 		unsigned int currentBit = 0;
+		//Every character in the frame is added to this string
 		string frameString = "";
 		//For each row going two at a time because each character represents two pixel rows
 		for (unsigned short y = 0; y < properties.height; y += 2)
@@ -203,26 +214,8 @@ int main(int argc, char* argv[])
 				//Next bit
 				currentBit++;
 
-				//Choose the right pixel to draw
-				switch (toDraw)
-				{
-				case 0b00000011:
-					//Draw both
-					frameString += characters[3];
-					break;
-				case 0b00000001:
-					//Draw Top
-					frameString += characters[1];
-					break;
-				case 0b00000010:
-					//Draw Bottom
-					frameString += characters[2];
-					break;
-				default:
-					//Draw Empty
-					frameString += characters[0];
-					break;
-				}
+				//Add the right pixel to the frame string
+				frameString += characters[toDraw];
 			}
 			frameString += "\n";
 			//Skip a line since two rows are added in one pass

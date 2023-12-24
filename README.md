@@ -1,6 +1,6 @@
-# Console Video Player
+# CVid: Console Video Player
 
-This simple program can play videos on the Windows CMD or Powershell. In case VLC is too complex for some.
+This simple program can play videos on the Windows CMD or Powershell. In case VLC is just too complex.
 
 ## Compilation
 Everything is contained in ConsoleVideoPlayer.cpp. Simply compile with **MSVC**.

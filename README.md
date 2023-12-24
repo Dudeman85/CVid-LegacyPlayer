@@ -3,7 +3,7 @@
 This simple program can play videos on the Windows CMD or Powershell. In case VLC is just too complex.
 
 ## Compilation
-Everything is contained in ConsoleVideoPlayer.cpp. Simply compile with **MSVC**.
+Everything is contained in CVid.cpp. Simply compile with **MSVC**.
 
 To set up the Python environment for running the converter script use:
 ```
@@ -28,7 +28,7 @@ The possible command line arguments are:
 ### Play Video
 Once you have converted video and audio files, simply place them both in the same directory and run the program:
 
-```bash
+```
 cvid -v path/to/video
 ```
 The possible command line arguments are:

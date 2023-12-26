@@ -14,7 +14,7 @@ using byte = unsigned char;
 char* GetOption(char** argv, int argc, const string& option, const string& altName = "")
 {
 	//Find the option 
-	char** itr = std::find(argv, argv + argc, option); 
+	char** itr = std::find(argv, argv + argc, option);
 	if (itr == argv + argc)
 		itr = std::find(argv, argv + argc, altName);
 
@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
 	if (OptionExists(argv, argc, "-c", "--charset"))
 	{
 		//Load from command line args
-		char* charset =GetOption(argv, argc, "-c", "--charset");
+		char* charset = GetOption(argv, argc, "-c", "--charset");
 		if (strlen(charset) >= 3)
 		{
 			characters[1] = charset[0]; //Top
@@ -161,12 +161,15 @@ int main(int argc, char* argv[])
 
 	//Play the audio if provided
 	PlaySoundA((LPCSTR)(videoName + ".wav").c_str(), NULL, SND_FILENAME | SND_ASYNC);
-	
+
 	//Calculate the time to wait between frames
 	auto waitTime = chrono::microseconds((int)((1.f / properties.fps) * 1000000));
-	unsigned int frameOffset = 0;
+	unsigned int dataIndex = 0;
+	unsigned int currentBit = 0;
+	//Should a pixel be drawn
+	bool drawState = false;
 	//For each frame, currently max of 65535
-	for (unsigned short i = 0; i < properties.frames; i++)
+	for (unsigned short frame = 0; frame < properties.frames; frame++)
 	{
 		auto frameStart = chrono::high_resolution_clock::now();
 
@@ -174,59 +177,45 @@ int main(int argc, char* argv[])
 		SetConsoleCursorPosition(console, COORD{ (short)0, (short)0 });
 
 		//Draw the frame data
-		//Keep track of important bit data
-		unsigned int currentBit = 0;
 		//Every character in the frame is added to this string
 		string frameString = "";
+
 		//For each row going two at a time because each character represents two pixel rows
 		for (unsigned short y = 0; y < properties.height; y += 2)
 		{
-			//Move the cursor to the beginning of the next line
-			SetConsoleCursorPosition(console, COORD{ (short)0, (short)ceil((float)y / 2) });
-
 			//For each column
 			for (unsigned short x = 0; x < properties.width; x++)
 			{
-				char toDraw = 0b00000000;
-
-				//A bitmask to check the upper of the pixel pair
-				byte topMask = 0b10000000 >> currentBit % 8;
-				//A bitmask for checking the lower pixel of the pixel pair
-				byte bottomMask = 0b10000000 >> (currentBit + properties.width) % 8;
-
-				//Check the higher pixel
-				unsigned int dataIndex = floor((float)currentBit / 8) + frameOffset;
-				if ((videoData[dataIndex] & topMask) == topMask)
+				byte toDraw = 0b00000000;
+				//For both upper pixel and lower pixel if it exists
+				for (char i = 1; i < (y == properties.height -1 ? 2 : 3); i++)
 				{
-					toDraw |= 0b0000001;
-				}
-
-				//Check the lower pixel
-				dataIndex = floor(((float)currentBit + (float)properties.width) / 8) + frameOffset;
-				if (y + 1 < properties.height)
-				{
-					if ((videoData[dataIndex] & bottomMask) == bottomMask)
+					//Check if we should change the drawState
+					if (currentBit >= videoData[dataIndex])
 					{
-						toDraw |= 0b0000010;
+						dataIndex++;
+						currentBit = 0;
+						drawState = !drawState;
 					}
+					//If the data byte is 0 flip the state again
+					if (videoData[dataIndex] == 0)
+					{
+						dataIndex++;
+						currentBit = 0;
+						drawState = !drawState;
+					}
+					//Check the pixel
+					if (drawState)
+						toDraw |= i;
+					currentBit++;
 				}
-
-				//Next bit
-				currentBit++;
-
 				//Add the right pixel to the frame string
 				frameString += characters[toDraw];
 			}
-			frameString += "\n";
-			//Skip a line since two rows are added in one pass
-			currentBit += properties.width;
 		}
 
 		//Draw the frame
 		WriteConsoleA(console, frameString.c_str(), frameString.size(), NULL, NULL);
-
-		//Shift the data index to the next frame start
-		frameOffset += floor((float)(properties.width * properties.height) / 8) + 1;
 
 		//Keep a steady FPS regardless of processing time
 		while (true)

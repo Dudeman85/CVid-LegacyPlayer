@@ -13,9 +13,10 @@ parser.add_argument('-l', '--luminance', default=128)
 parser.add_argument('-a', '--audio', default="true")
 args = parser.parse_args()
 
+#Set the constant from args
 VIDEO_PATH = args.source
-LUMINANCE_CUT = int(args.luminance)
 CONVERTED_NAME = VIDEO_PATH.split(".")[0]
+LUMINANCE_CUT = int(args.luminance)
 FRAME_SIZE = 0, 0
 MAX_FRAME_SIZE = 240, 126
 
@@ -48,11 +49,14 @@ outputFile.write(int(video.get(cv2.CAP_PROP_FRAME_COUNT)).to_bytes(2, "big"))
 outputFile.write(int(video.get(cv2.CAP_PROP_FPS)).to_bytes(1, "big"))
 
 currentFrame = 0
+runLength = 0
+#Video will always start as black (False)
+dataState = False
 #For each frame of the video
 while(True): 
     #Get the frame
     ret,frame = video.read() 
-  
+
     #If the frame exists
     if ret: 
         #Resize
@@ -61,34 +65,34 @@ while(True):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) 
         
         currentFrame += 1
-        currentBit = 0
-        byte = 0
         #For each pixel in the resized image
-        for row in range(FRAME_SIZE[1]):
+        for row in range(0, FRAME_SIZE[1], 2):
             for col in range(FRAME_SIZE[0]):
-                pixel = frame[row, col]
+                #Two rows at a time
+                for i in range(0, 2):
+                    #Make sure the pixel is in bounds
+                    if row + i >= FRAME_SIZE[1]:
+                        break
 
-                #Write a 1 if the pixel is white enough
-                if pixel > LUMINANCE_CUT:
-                    byte |= 1
+                    pixel = frame[row + i, col]
 
-                currentBit += 1
+                    #If we have counted the maximum runLength of 255
+                    if runLength >= 255:
+                        dataState = not dataState
+                        outputFile.write(runLength.to_bytes(1, "big"))
+                        runLength = 0
 
-                #If the current byte has been filled
-                if currentBit >= 8:
-                    outputFile.write(byte.to_bytes(1, "big"))
-                    #print(byte)
-                    byte = 0
-                    currentBit = 0
-                else:
-                    byte <<= 1
-
-        #Print and shift the final byte
-        byte <<= 8 - currentBit - 1
-        outputFile.write(byte.to_bytes(1, "big"))
+                    #If the pixel is different than the previous one
+                    if (pixel > LUMINANCE_CUT) != dataState:
+                        dataState = not dataState
+                        outputFile.write(runLength.to_bytes(1, "big"))
+                        runLength = 1
+                    else:
+                        runLength += 1
 
         print("Processed " + str(currentFrame) + " frames of " + str(int(video.get(cv2.CAP_PROP_FRAME_COUNT))))
     else: 
         break
 
+outputFile.write(runLength.to_bytes(1, "big"))
 outputFile.close()

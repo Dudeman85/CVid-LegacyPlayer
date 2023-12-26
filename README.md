@@ -36,6 +36,7 @@ The possible command line arguments are:
 - -c or --charset: The custom character set to use for rendering. You need to provide three ASCII characters which will represent an upper, a lower, and both pixels. The default is ▀▄█
 
 ## TODO
+- [x] Implement RLE compression to video format
 - [ ] Add ability to load any type of video without converting, possibly through ffmpeg.
 - [ ] Add sound playback for that loaded video, possibly through miniaudio.
 - [ ] Add 16 colors

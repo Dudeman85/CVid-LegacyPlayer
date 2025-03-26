@@ -2,6 +2,8 @@
 
 This simple program can play videos on the Windows CMD or Powershell. In case VLC is just too complex.
 
+NOTE: This is a proof of concept for the paper *Rasterization and Rendering in a Console* implemented in https://github.com/Dudeman85/CVid.
+
 ## Compilation
 Everything is contained in CVid.cpp. Simply compile with **MSVC**.
 
